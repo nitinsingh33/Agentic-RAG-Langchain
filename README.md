@@ -78,29 +78,29 @@ An intelligent, multi-agent RAG system that:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Client Layer                            │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │         Streamlit Web Interface                      │  │
-│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │         Streamlit Web Interface                      │   │
+│  └──────────────────────────────────────────────────────┘   │
 └─────────────────────┬───────────────────────────────────────┘
                       │ HTTP/REST API
 ┌─────────────────────▼───────────────────────────────────────┐
 │                   FastAPI Backend                           │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              Router Agent (Intent Detection)         │  │
-│  └───────┬──────────────────┬───────────────┬───────────┘  │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Router Agent (Intent Detection)         │   │
+│  └───────┬──────────────────┬───────────────┬───────────┘   │
 │          │                  │               │               │
-│  ┌───────▼────┐   ┌────────▼─────┐   ┌────▼──────────┐   │
-│  │  Company   │   │    Sales     │   │    Pricing    │   │
-│  │   Agent    │   │    Agent     │   │     Agent     │   │
-│  └────────────┘   └──────────────┘   └───────────────┘   │
+│  ┌───────▼────┐   ┌────────▼─────┐   ┌────▼──────────┐      │
+│  │  Company   │   │    Sales     │   │    Pricing    │      │
+│  │   Agent    │   │    Agent     │   │     Agent     │      │
+│  └────────────┘   └──────────────┘   └───────────────┘      │
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │              Processing & Storage Layer                     │
-│  ┌──────────────┐  ┌────────────────┐  ┌────────────────┐ │
-│  │ Multi-Modal  │  │   Vector DB    │  │   LLM Service  │ │
-│  │  Processor   │  │   (Pinecone)   │  │ (Gemini 1.5)   │ │
-│  └──────────────┘  └────────────────┘  └────────────────┘ │
+│  ┌──────────────┐  ┌────────────────┐  ┌────────────────┐   │
+│  │ Multi-Modal  │  │   Vector DB    │  │   LLM Service  │   │
+│  │  Processor   │  │   (Pinecone)   │  │ (Gemini 1.5)   │   │
+│  └──────────────┘  └────────────────┘  └────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -123,20 +123,6 @@ An intelligent, multi-agent RAG system that:
 - **python-docx**: Microsoft Word document processing
 - **openpyxl**: Excel file handling
 - **Pillow (PIL)**: Image processing
-
-### Development Tools
-- **Git**: Version control
-- **dotenv**: Environment variable management
-- **Pydantic**: Data validation
-- **Uvicorn**: ASGI server
-
-## Prerequisites
-
-- Python 3.8 or higher
-- Pinecone account and API key
-- Google AI Studio account (Gemini API key)
-- 8GB RAM minimum (16GB recommended)
-- 2GB free disk space
 
 ## Installation
 
@@ -537,51 +523,6 @@ Agentic-RAG-Langchain/
 
 ## Development Workflow
 
-### Branch Strategy
-
-- **main**: Production-ready, stable code
-- **dev**: Development and testing branch
-- **feature/**: Feature-specific branches (optional)
-
-### Working with Branches
-
-```bash
-# Start working on a new feature
-git checkout dev
-git checkout -b feature/new-feature
-
-# Make changes and commit
-git add .
-git commit -m "feat: add new feature description"
-
-# Push to remote
-git push origin feature/new-feature
-
-# Merge to dev after testing
-git checkout dev
-git merge feature/new-feature
-git push origin dev
-
-# Merge to main when ready for production
-git checkout main
-git merge dev
-git push origin main
-```
-
-### Commit Convention
-
-Follow conventional commits:
-
-```
-feat: Add new feature
-fix: Bug fix
-docs: Documentation changes
-style: Code style changes
-refactor: Code refactoring
-test: Add tests
-chore: Maintenance tasks
-```
-
 ### Adding New Agents
 
 1. Create agent file in `backend/app/agents/`
@@ -651,26 +592,6 @@ Solution: Reduce retrieval k parameter
 Optimize chunk size
 Check Pinecone index performance metrics
 ```
-
-## Best Practices
-
-### Security
-- Never commit `.env` files
-- Rotate API keys regularly
-- Use environment variables for all secrets
-- Implement API authentication for production
-
-### Code Quality
-- Follow PEP 8 style guidelines
-- Write docstrings for all functions
-- Add type hints where applicable
-- Keep functions focused and modular
-
-### Documentation
-- Update README for significant changes
-- Document API changes
-- Maintain inline code comments
-- Keep architecture diagrams current
 
 ## Future Enhancements
 
