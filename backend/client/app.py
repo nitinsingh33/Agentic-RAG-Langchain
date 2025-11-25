@@ -207,6 +207,45 @@ with st.sidebar:
 st.title("EV-GPT Business Intelligence")
 st.caption("AI-powered insights using your multi-agent RAG system with visual analysis capabilities")
 
+# ---------------- AGENT ROUTING DASHBOARD ---------------- #
+with st.expander("🔍 **Agent Routing Dashboard** - Click to see LangChain orchestration", expanded=False):
+    st.markdown("### 🎯 Available Agents & Keywords")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 🛒 **Sales Agent**")
+        st.info("**Keywords:** sales, sell, buy, purchase, dealer, showroom, booking, delivery")
+        st.markdown("**Sample Query:** *'Where can I buy a Hero Vida scooter in Mumbai?'*")
+        
+        st.markdown("#### 💰 **Pricing Agent**") 
+        st.info("**Keywords:** price, cost, pricing, expensive, cheap, affordable, budget")
+        st.markdown("**Sample Query:** *'What is the price of Hero Vida Pro?'*")
+    
+    with col2:
+        st.markdown("#### 🏢 **Company Agent**")
+        st.info("**Keywords:** hero, vida, bajaj, tvs, company, business, revenue, earnings")
+        st.markdown("**Sample Query:** *'Tell me about Hero MotoCorp financial performance'*")
+        
+        st.markdown("#### 🎨 **Multimodal Agent**")
+        st.info("**Keywords:** image, chart, graph, visual, picture, diagram, table")
+        st.markdown("**Sample Query:** *'Show me a chart of electric scooter sales'*")
+
+    st.markdown("### 📊 **Test These Queries (Based on Your Data):**")
+    test_queries = [
+        "🛒 Where can I purchase Hero Vida V1 scooter?",
+        "💰 What is the price of Hero Vida V1 Plus and V1 Pro?", 
+        "🏢 Tell me about Hero MotoCorp electric vehicle business",
+        "🎨 Show me Hero Vida specifications table",
+        "💰 Compare Hero Vida V1 Plus vs V1 Pro pricing",
+        "🏢 What are Hero company's EV manufacturing details?",
+        "🛒 What warranty does Hero provide for Vida scooters?"
+    ]
+    
+    for query in test_queries:
+        if st.button(f"Test: {query}", key=f"test_{hash(query)}"):
+            st.session_state.test_query = query[2:]  # Remove emoji
+
 # Query mode selector
 query_mode = st.radio(
     "Query Mode:",
@@ -242,15 +281,41 @@ for msg in st.session_state.messages:
                 st.markdown("### Multi-Modal Results")
                 display_multimodal_results(metadata["results"])
             else:
-                # Standard agent results
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.caption(f"🤖 Agent: {metadata.get('agent_used','Unknown')}")
-                with col2:
-                    st.caption(f"🎯 Intent: {metadata.get('intent','Unknown')}")
+                # Enhanced agent routing display in chat history
+                agent_used = metadata.get('agent_used', 'Unknown')
+                intent = metadata.get('intent', 'Unknown')
+                
+                agent_colors = {
+                    'Sales Agent': '🛒',
+                    'Pricing Agent': '💰',
+                    'Company Agent': '🏢', 
+                    'Multimodal Agent': '🎨',
+                    'General QA Agent': '🤖',
+                    'RAG Agent': '📚'
+                }
+                
+                agent_icon = agent_colors.get(agent_used, '❓')
+                
+                # Enhanced display for chat history  
+                if 'Sales' in agent_used:
+                    st.markdown(f"<div style='background-color: #e8f5e8; border-radius: 5px; padding: 8px; margin: 5px 0;'><b>🛒 {agent_used}</b> | Intent: {intent}</div>", unsafe_allow_html=True)
+                elif 'Pricing' in agent_used:
+                    st.markdown(f"<div style='background-color: #fff3cd; border-radius: 5px; padding: 8px; margin: 5px 0;'><b>💰 {agent_used}</b> | Intent: {intent}</div>", unsafe_allow_html=True)
+                elif 'Company' in agent_used:
+                    st.markdown(f"<div style='background-color: #e2e3f3; border-radius: 5px; padding: 8px; margin: 5px 0;'><b>🏢 {agent_used}</b> | Intent: {intent}</div>", unsafe_allow_html=True)
+                elif 'Multimodal' in agent_used:
+                    st.markdown(f"<div style='background-color: #f8d7da; border-radius: 5px; padding: 8px; margin: 5px 0;'><b>🎨 {agent_used}</b> | Intent: {intent}</div>", unsafe_allow_html=True)
+                else:
+                    st.info(f"**{agent_icon} {agent_used}** | Intent: `{intent}`")
                 if metadata.get("source_documents"):
                     with st.expander("📑 Sources"):
                         display_sources(metadata["source_documents"])
+
+# Handle test queries
+if hasattr(st.session_state, 'test_query'):
+    prompt = st.session_state.test_query
+    del st.session_state.test_query
+    st.rerun()
 
 # Chat input
 prompt_placeholder = {
@@ -259,7 +324,33 @@ prompt_placeholder = {
     "📊 Direct RAG": "Ask any question from the documents..."
 }
 
-if prompt := st.chat_input(prompt_placeholder.get(query_mode, "Ask anything...")):
+# Live routing prediction (for testing purposes)
+if query_mode == "🤖 Smart Agent (Auto-Routing)":
+    with st.container():
+        test_input = st.text_input("🔍 **Test Query Routing** (type to see which agent would handle it):", key="route_test")
+        if test_input:
+            # Simple client-side prediction based on keywords
+            test_lower = test_input.lower()
+            
+            if any(word in test_lower for word in ['image', 'chart', 'graph', 'visual', 'picture', 'diagram']):
+                st.success("🎨 **Predicted Route:** Multimodal Agent")
+            elif any(word in test_lower for word in ['hero', 'vida', 'bajaj', 'tvs', 'company', 'business', 'revenue']):
+                st.success("🏢 **Predicted Route:** Company Agent") 
+            elif any(word in test_lower for word in ['price', 'cost', 'pricing', 'expensive', 'cheap', 'affordable']):
+                st.success("💰 **Predicted Route:** Pricing Agent")
+            elif any(word in test_lower for word in ['sales', 'sell', 'buy', 'purchase', 'dealer', 'showroom']):
+                st.success("🛒 **Predicted Route:** Sales Agent")
+            else:
+                st.info("🤖 **Predicted Route:** General QA Agent")
+
+prompt = None
+if hasattr(st.session_state, 'test_query'):
+    prompt = st.session_state.test_query
+    del st.session_state.test_query
+else:
+    prompt = st.chat_input(prompt_placeholder.get(query_mode, "Ask anything..."))
+
+if prompt:
     st.session_state.messages.append({"role":"user","content":prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -313,11 +404,36 @@ if prompt := st.chat_input(prompt_placeholder.get(query_mode, "Ask anything...")
                         answer = response.get("answer","No answer received")
                         st.markdown(answer)
                         
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.caption(f"🤖 Agent: {response.get('agent_used','Unknown')}")
-                        with col2:
-                            st.caption(f"🎯 Intent: {response.get('intent','Unknown')}")
+                        # Enhanced agent routing display
+                        agent_used = response.get('agent_used', 'Unknown')
+                        intent = response.get('intent', 'Unknown')
+                        
+                        # Color coding for different agents
+                        agent_colors = {
+                            'Sales Agent': '🛒',
+                            'Pricing Agent': '💰', 
+                            'Company Agent': '🏢',
+                            'Multimodal Agent': '🎨',
+                            'General QA Agent': '🤖',
+                            'RAG Agent': '📚'
+                        }
+                        
+                        agent_icon = agent_colors.get(agent_used, '❓')
+                        
+                        # Make the routing VERY visible
+                        st.success(f"**🎯 ORCHESTRATION SUCCESS: {agent_icon} {agent_used}**")
+                        
+                        # Create a prominent colored box
+                        if 'Sales' in agent_used:
+                            st.markdown(f"<div style='background-color: #e8f5e8; border-left: 5px solid #28a745; padding: 10px; margin: 10px 0;'><b>🛒 SALES AGENT ACTIVATED</b><br>Intent: {intent}<br>Query routed successfully!</div>", unsafe_allow_html=True)
+                        elif 'Pricing' in agent_used:
+                            st.markdown(f"<div style='background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 10px; margin: 10px 0;'><b>💰 PRICING AGENT ACTIVATED</b><br>Intent: {intent}<br>Query routed successfully!</div>", unsafe_allow_html=True)
+                        elif 'Company' in agent_used:
+                            st.markdown(f"<div style='background-color: #e2e3f3; border-left: 5px solid #6f42c1; padding: 10px; margin: 10px 0;'><b>� COMPANY AGENT ACTIVATED</b><br>Intent: {intent}<br>Query routed successfully!</div>", unsafe_allow_html=True)
+                        elif 'Multimodal' in agent_used:
+                            st.markdown(f"<div style='background-color: #f8d7da; border-left: 5px solid #dc3545; padding: 10px; margin: 10px 0;'><b>🎨 MULTIMODAL AGENT ACTIVATED</b><br>Intent: {intent}<br>Query routed successfully!</div>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"<div style='background-color: #d1ecf1; border-left: 5px solid #17a2b8; padding: 10px; margin: 10px 0;'><b>🤖 {agent_used.upper()}</b><br>Intent: {intent}<br>Query processed!</div>", unsafe_allow_html=True)
                         
                         if response.get("source_documents"):
                             with st.expander("📑 Sources"):

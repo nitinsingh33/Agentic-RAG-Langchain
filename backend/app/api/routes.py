@@ -13,16 +13,20 @@ from app.services.ingest import ingest_files
 from app.services.multimodal_processor import MultiModalProcessor, process_multimodal_document
 
 def route_query_production(query: str, chat_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
-    """Production query routing."""
+    """Production query routing with proper agent orchestration."""
     try:
-        from app.services.stateful_bot import get_qa
-        result = get_qa().invoke({"question": query, "chat_history": chat_history or []})
+        # Import the router agent
+        from app.agents.router_agent import route_query
         
+        # Use the router agent to determine intent and route to appropriate agent
+        result = route_query(query, chat_history)
+        
+        # Ensure the result has all required fields
         return {
             "answer": result.get("answer", str(result)),
-            "intent": "general",
+            "intent": result.get("intent", "auto-detected"),
             "source_documents": result.get("source_documents", []),
-            "agent_used": "RAG Agent"
+            "agent_used": result.get("agent_used", "Router Agent")
         }
             
     except Exception as e:
@@ -274,9 +278,9 @@ async def process_query(request: QueryRequest):
 
         return QueryResponse(
             answer=answer,
-            intent="auto-detected",
+            intent=result.get("intent", "auto-detected"),
             source_documents=formatted_sources,
-            agent_used="RAG Agent"
+            agent_used=result.get("agent_used", "RAG Agent")
         )
 
     except Exception as e:

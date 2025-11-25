@@ -2,6 +2,9 @@
 
 A production-ready, multi-agent Retrieval-Augmented Generation (RAG) system designed for intelligent document analysis and business intelligence in the automotive/EV industry. The system leverages specialized AI agents, multi-modal processing capabilities, and advanced semantic search to provide contextual, accurate responses from complex business documents.
 
+![Demo Screenshot](backend/assets/screenshots/ev_gpt_demo-1.png)
+![Demo Screenshot](backend/assets/screenshots/ev_gpt_demo-2.png)
+
 ## Table of Contents
 
 - [Overview](#overview)
