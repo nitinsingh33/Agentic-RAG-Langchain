@@ -234,3 +234,6 @@ uploads/
 downloads/
 cache/
 .cache/
+# Keep the runtime data directory in the repository; never commit its contents.
+!backend/data/
+!backend/data/.gitkeep
