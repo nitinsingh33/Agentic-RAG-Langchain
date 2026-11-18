@@ -182,6 +182,8 @@ node_modules/
 
 # Streamlit
 .streamlit/
+!.streamlit/
+!.streamlit/config.toml
 
 # FastAPI
 .pytest_cache/

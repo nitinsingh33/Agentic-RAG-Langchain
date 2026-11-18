@@ -13,11 +13,11 @@ load_dotenv(ENV_FILE)
 
 
 class Settings:
-    PROJECT_NAME = os.getenv("PROJECT_NAME", "EV-GPT RAG API")
+    PROJECT_NAME = os.getenv("PROJECT_NAME", "EV Moto GPT API")
     VERSION = os.getenv("VERSION", "1.0.0")
     DESCRIPTION = os.getenv(
         "DESCRIPTION",
-        "FastAPI backend for the EV-GPT retrieval-augmented generation system.",
+        "Agentic document research API for Hero Motocorp business knowledge.",
     )
 
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
