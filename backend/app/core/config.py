@@ -25,6 +25,8 @@ class Settings:
     INDEX_NAME = os.getenv("INDEX_NAME", "ev-gpt-rag")
     PINECONE_CLOUD = os.getenv("PINECONE_CLOUD", "aws")
     PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
+    PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "")
+    PINECONE_DIMENSION = int(os.getenv("PINECONE_DIMENSION", "384"))
 
     EMBEDDING_MODEL = os.getenv(
         "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
@@ -35,23 +37,23 @@ class Settings:
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
     TOP_K = int(os.getenv("TOP_K", "5"))
+    MAX_UPLOAD_SIZE_BYTES = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(25 * 1024 * 1024)))
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", "8001"))
-    RELOAD = os.getenv("RELOAD", "true").lower() == "true"
+    RELOAD = os.getenv("RELOAD", "false").lower() == "true"
 
     DATA_DIRECTORY = BACKEND_DIR / os.getenv("DATA_DIRECTORY", "data")
 
     ALLOWED_ORIGINS = [
         origin.strip()
-        for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",")
+        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:8501").split(",")
         if origin.strip()
     ]
 
-    def validate(self) -> None:
+    def validate_vector_store(self) -> None:
         missing = []
-        if not self.GEMINI_API_KEY:
-            missing.append("GEMINI_API_KEY")
         if not self.PINECONE_API_KEY:
             missing.append("PINECONE_API_KEY")
         if not self.INDEX_NAME:
@@ -61,6 +63,14 @@ class Settings:
             raise RuntimeError(
                 "Missing required environment variables: " + ", ".join(missing)
             )
+
+    def validate_generation(self) -> None:
+        if not self.GEMINI_API_KEY:
+            raise RuntimeError("Missing required environment variable: GEMINI_API_KEY")
+
+    def validate(self) -> None:
+        self.validate_vector_store()
+        self.validate_generation()
 
 
 settings = Settings()

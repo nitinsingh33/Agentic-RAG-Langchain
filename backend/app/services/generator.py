@@ -8,7 +8,7 @@ from app.core.config import settings
 
 @lru_cache(maxsize=1)
 def get_chat_model() -> ChatGoogleGenerativeAI:
-    settings.validate()
+    settings.validate_generation()
     return ChatGoogleGenerativeAI(
         model=settings.GEMINI_MODEL,
         temperature=settings.GEMINI_TEMPERATURE,

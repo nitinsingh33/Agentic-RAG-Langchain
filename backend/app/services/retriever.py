@@ -20,13 +20,13 @@ def get_embeddings() -> HuggingFaceEmbeddings:
 @lru_cache(maxsize=1)
 def get_pinecone_client() -> Pinecone:
     """Create and cache the Pinecone client."""
-    settings.validate()
+    settings.validate_vector_store()
     return Pinecone(api_key=settings.PINECONE_API_KEY)
 
 
 def ensure_index() -> None:
     """Create the Pinecone index if it does not already exist."""
-    settings.validate()
+    settings.validate_vector_store()
 
     client = get_pinecone_client()
     existing_indexes = client.list_indexes().names()
@@ -34,7 +34,7 @@ def ensure_index() -> None:
     if settings.INDEX_NAME not in existing_indexes:
         client.create_index(
             name=settings.INDEX_NAME,
-            dimension=384,
+            dimension=settings.PINECONE_DIMENSION,
             metric="cosine",
             spec=ServerlessSpec(
                 cloud=settings.PINECONE_CLOUD,
@@ -70,6 +70,7 @@ def get_retriever(top_k: int | None = None):
             vector=query_vector,
             top_k=k,
             include_metadata=True,
+            namespace=settings.PINECONE_NAMESPACE,
         )
 
         documents = []

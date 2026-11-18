@@ -2,6 +2,7 @@
 
 import hashlib
 from pathlib import Path
+from time import perf_counter
 
 import pandas as pd
 from langchain_core.documents import Document
@@ -161,6 +162,11 @@ def load_documents(
             f"Data directory does not exist: {data_path}"
         )
 
+    if data_path.is_file():
+        if data_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            return []
+        return _load_file(data_path)
+
     documents: list[Document] = []
 
     for path in sorted(data_path.rglob("*")):
@@ -177,7 +183,8 @@ def load_documents(
 def ingest_documents(
     data_path: Path | None = None,
 ) -> dict:
-    settings.validate()
+    started_at = perf_counter()
+    settings.validate_vector_store()
 
     data_path = data_path or settings.DATA_DIRECTORY
 
@@ -217,12 +224,13 @@ def ingest_documents(
     embeddings = get_embeddings()
     index = get_index()
 
-    for i, chunk in enumerate(chunks):
-        chunk_id = _stable_id(chunk, i)
+    chunk_texts = [chunk.page_content for chunk in chunks]
+    embedding_started_at = perf_counter()
+    embedded_chunks = embeddings.embed_documents(chunk_texts)
+    embedding_ms = (perf_counter() - embedding_started_at) * 1000
 
-        vector = embeddings.embed_query(
-            chunk.page_content
-        )
+    for i, (chunk, values) in enumerate(zip(chunks, embedded_chunks)):
+        chunk_id = _stable_id(chunk, i)
 
         metadata = dict(chunk.metadata)
 
@@ -234,24 +242,32 @@ def ingest_documents(
         vectors.append(
             {
                 "id": chunk_id,
-                "values": vector,
+                "values": values,
                 "metadata": metadata,
             }
         )
 
     # Upsert in batches to avoid sending a huge request.
     batch_size = 100
+    upsert_started_at = perf_counter()
 
     for start in range(0, len(vectors), batch_size):
         batch = vectors[
             start : start + batch_size
         ]
 
-        index.upsert(vectors=batch)
+        index.upsert(vectors=batch, namespace=settings.PINECONE_NAMESPACE)
+    upsert_ms = (perf_counter() - upsert_started_at) * 1000
 
     return {
         "status": "success",
         "documents_loaded": len(unique),
         "chunks_created": len(chunks),
         "index_name": settings.INDEX_NAME,
+        "namespace": settings.PINECONE_NAMESPACE,
+        "metrics": {
+            "embedding_ms": round(embedding_ms, 2),
+            "upsert_ms": round(upsert_ms, 2),
+            "total_ms": round((perf_counter() - started_at) * 1000, 2),
+        },
     }

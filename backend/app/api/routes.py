@@ -1,26 +1,16 @@
 """HTTP API for the core RAG system."""
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
+from app.api.schemas import QueryRequest, QueryResponse
 from app.rag.ingestion import ingest_documents
 from app.rag.pipeline import run_rag
 
 
 router = APIRouter(prefix="/api/v1")
-
-
-class QueryRequest(BaseModel):
-    query: str = Field(min_length=1)
-    top_k: int = Field(default=settings.TOP_K, ge=1, le=20)
-
-
-class QueryResponse(BaseModel):
-    answer: str
-    sources: list[dict[str, Any]]
 
 
 @router.get("/")
@@ -40,7 +30,7 @@ async def health():
 @router.post("/query", response_model=QueryResponse)
 async def query(request: QueryRequest):
     try:
-        return run_rag(request.query, top_k=request.top_k)
+        return await run_in_threadpool(run_rag, request.query, request.top_k)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -49,7 +39,7 @@ async def query(request: QueryRequest):
 
 
 @router.post("/ingest")
-async def ingest():
+def ingest():
     try:
         return ingest_documents(settings.DATA_DIRECTORY)
     except FileNotFoundError as exc:
@@ -75,10 +65,14 @@ async def upload_document(file: UploadFile = File(...)):
     settings.DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
     target = settings.DATA_DIRECTORY / Path(file.filename).name
     content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(content) > settings.MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail="Uploaded file exceeds the size limit.")
     target.write_bytes(content)
 
     try:
-        result = ingest_documents(settings.DATA_DIRECTORY)
+        result = await run_in_threadpool(ingest_documents, target)
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Document ingestion failed.") from exc
 

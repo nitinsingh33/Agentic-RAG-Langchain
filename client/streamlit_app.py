@@ -1,3 +1,4 @@
+import os
 import requests
 import streamlit as st
 
@@ -6,7 +7,7 @@ import streamlit as st
 # Configuration
 # --------------------------------------------------
 
-API_BASE_URL = "http://127.0.0.1:8001/api/v1"
+API_BASE_URL = os.getenv("API_URL", "http://127.0.0.1:8001").rstrip("/") + "/api/v1"
 
 st.set_page_config(
     page_title="EV-GPT",
@@ -146,6 +147,15 @@ if uploaded_file is not None:
                         result.get("index_name", "N/A"),
                     )
 
+                ingest_metrics = result.get("metrics", {})
+                if ingest_metrics:
+                    st.caption(
+                        "Ingestion timing — "
+                        f"embedding: {ingest_metrics.get('embedding_ms', 0)} ms · "
+                        f"upsert: {ingest_metrics.get('upsert_ms', 0)} ms · "
+                        f"total: {ingest_metrics.get('total_ms', 0)} ms"
+                    )
+
             except requests.RequestException as exc:
                 st.error(f"Upload failed: {exc}")
 
@@ -183,6 +193,14 @@ if st.button("Ask", type="primary", use_container_width=True):
                 st.subheader("Answer")
 
                 st.write(result.get("answer", ""))
+
+                metrics = result.get("metrics", {})
+                if metrics:
+                    metric_cols = st.columns(4)
+                    metric_cols[0].metric("Retrieval", f"{metrics.get('retrieval_ms', 0)} ms")
+                    metric_cols[1].metric("Generation", f"{metrics.get('generation_ms', 0)} ms")
+                    metric_cols[2].metric("Total", f"{metrics.get('total_ms', 0)} ms")
+                    metric_cols[3].metric("Chunks", metrics.get("retrieved_chunks", 0))
 
                 sources = result.get("sources", [])
 
